@@ -12,7 +12,7 @@ class Attack(Action):
         self.power = power
         self.accuracy = accuracy
         self.priority = priority
-        self.effects.extend(effects)
+        self.effects = list(effects)
         self.charge = charge
 
 
@@ -21,7 +21,7 @@ class Defence(Action):
         self.name = name
         self.defence = defence
         self.priority = priority
-        self.effects.extend(effects)
+        self.effects = list(effects)
         self.charge = charge
 
 

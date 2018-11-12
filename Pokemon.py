@@ -1,6 +1,6 @@
 import Actions
 import random
-
+import Effects
 
 class PokemonType(object):
     NORMAL = 0
@@ -21,32 +21,44 @@ dmg_matrix = [[1, 1, 1, 1, 1, 1],
 
 class Pokemon(object):
     name = "Default Name"
-    max_health = health = 50
-    attack = 0
+    max_health = __health__ = 50
+    attack = 0.0
     defence = 0.0
     type = PokemonType.NORMAL
     speed = 10
     atb_position = 0
     level = 1
 
-    actions = list()
-    effects = list()
+    actions = []
+    effects = []
 
-    def level_up(self):
-        pass
+    def gain_exp(self, poke):
+        step = int(poke.level)/int(self.level)/5
+        new_level = round(self.level + step, 2)
+        if int(self.level) < int(new_level):
+            self.level_up(int(new_level))
+        self.level = new_level
 
     def atb_step(self):
         self.atb_position += self.speed
+        for a in self.effects:
+            a.duration -= self.speed
+            if a.duration < 0:
+                self.effects.remove(a)
 
     def refresh(self):
-        self.health = self.max_health
+        self.__health__ = self.max_health
+        self.effects.clear()
         self.atb_position = 0
 
+    def level_up(self, level):
+        pass
+
     def get_hp(self):
-        return self.health
+        return self.__health__
 
     def change_hp(self, step):
-        self.health += step
+        self.__health__ += step
 
     def introduce_yourself(self):
         print("Имя: " + self.name)
@@ -58,48 +70,67 @@ class Pokemon(object):
         print("Скорость: " + str(self.speed))
         print("Действия: " + str(self.actions))  # TODO вывод действий
 
-    def set_effect(self, effect):
-        self.effects.append(effect)
+    def add_effect(self, effect):
+        if type(effect) is Effects.Stun:
+            self.atb_position -= effect.amount
+            if self.atb_position < 0:
+                self.atb_position = 0
+        else:
+            # Проверка существующего эффекта, обновление при существовании
+            f = [a for a in self.effects if a.name == effect.name]   # TODO Переписать
+            if f:
+                index = self.effects.index(f[0])
+                self.effects[index].duration += effect.duration
+            else:
+                self.effects.append(effect)
+
+    def effect_processing(self):
+        for a in self.effects:
+            if a == Effects.Healing:
+                new_health = self.__health__ + a.amount()
+                if new_health > self.max_health:
+                    self.__health__ = self.max_health
+                else:
+                    self.__health__ = new_health
+            elif True:
+                pass
 
     def action(self, poke):
         action = None
-        priority = 5  # Почему 5?
+        priority = 5  # 5 - максимальный уровень приоритета
         while not action:
             priority -= 1
-            el_actions = list(filter(lambda a: a.priority == priority, self.actions))  # TODO Изменить приоритеты
-            if el_actions != []:
-                action = el_actions[random.randrange(0, len(el_actions))]
+            eligible_actions = list(filter(lambda a: a.priority == priority, self.actions))  # TODO Изменить приоритеты, добавить заряд
+            if eligible_actions != []:
+                action = eligible_actions[random.randrange(0, len(eligible_actions))]
 
         if type(action) is Actions.Attack:
             if random.randint(0, 100)/100 < action.accuracy:
-                damage = int(action.power*(dmg_matrix[self.type][poke.type] + self.attack)
-                             *(1 - poke.defence))
-                print(self.name + " наносит " + str(damage) + " урона " + poke.name
-                      + " способностью " + action.name + " (" + str(poke.health)
-                      + "->" + str(poke.health - damage) + ")")
+                damage = int(action.power
+                             * (dmg_matrix[self.type][poke.type] + self.attack)
+                             * (1 - poke.defence))
+                for a in action.effects:
+                    poke.add_effect(a)
+                print("%s наносит %s урона %s способностью %s (%s->%s)"
+                      % (self.name, str(damage), poke.name, action.name, str(poke.get_hp()), str(poke.get_hp() - damage)))
                 poke.change_hp(-damage)
 
-                if 0 >= poke.health:
-                    print(self.name + " убивает " + poke.name + "!")
+                if poke.get_hp() <= 0:
+                    print("%s убивает %s!" % (self.name, poke.name))
+                    self.gain_exp(poke)
                     return "KILL"
             else:
-                print(self.name + " попытался использовать способность "
-                      + action.name + " и промахнулся!")
+                print("%s попытался использовать способность %s и промахнулся!" % (self.name, action.name))
         elif type(action) is Actions.Defence:
-            # TODO Тут применение эффекта
-            print(self.name + " использует защитную способность " + action.name)
+            self.add_effect(Effects.CombatEffect(action.name, 100, defence=action.defence))
+            print("%s использует защитную способность %s" % (self.name, action.name))
         else:
             print(self.name + " ожидает")
 
 
-class Effect(object):
-    duration = 1
-    name = "Null effect"
-
-
 class Eevee(Pokemon):
     def __init__(self):
-        self.name = "Eevee_" + str(random.randint(1, 10000))
+        self.name = "Eevee_" + str(random.randint(1, 100000))
         self.max_health = self.health = 55
         self.attack = 0.10
         self.speed = 30
@@ -111,18 +142,20 @@ class Eevee(Pokemon):
                              Actions.Defence("Tail Dome", 1, 0.2),
                              Actions.Waiting()])
 
-    def level_up(self):
-        if 2 <= self.level:
+    def level_up(self, level):
+        if 2 == level:
             self.max_health = 75
             self.attack = 0.20
             self.speed = 35
             self.defence = 0.10
-            self.actions.append(Actions.Attack("Ear Flop", 1, 14, 0.8))  # TODO Тут должно быть оглушение
+            self.actions.append(Actions.Attack("Ear Flop", 1, 10, 0.8, effects=[
+                Effects.Stun("Ear Flop", 50)
+            ]))
 
 
 class Krabby(Pokemon):
     def __init__(self):
-        self.name = "Krabby_" + str(random.randint(1, 10000))
+        self.name = "Krabby_" + str(random.randint(1, 100000))
         self.max_health = self.health = 75
         self.attack = 0.20
         self.defence = 0.10
@@ -133,11 +166,11 @@ class Krabby(Pokemon):
         self.actions.extend([Actions.Attack("Claw Bite", 1, 12, 0.8),
                              Actions.Attack("Claw Smash", 1, 17, 0.7),
                              Actions.Defence("Crab Defence", 1, 0.2),
-                             Actions.Defence("Super Crab Defence", 1, 0.4),  # TODO Тут тоже какая-то способность
+                             Actions.Defence("Super Crab Defence", 1, 0.4),
                              Actions.Waiting()])
 
-    def level_up(self):
-        if 2 <= self.level:
+    def level_up(self, level):
+        if 2 == level:
             self.max_health = 100
             self.attack = 0.30
             self.defence = 0.20
@@ -147,7 +180,7 @@ class Krabby(Pokemon):
 
 class Electrode(Pokemon):
     def __init__(self):
-        self.name = "Electrode_" + str(random.randint(1, 10000))
+        self.name = "Electrode_" + str(random.randint(1, 100000))
         self.max_health = self.health = 40
         self.attack = 0.30
         self.defence = 0.10
@@ -158,11 +191,11 @@ class Electrode(Pokemon):
         self.actions.extend([Actions.Attack("Electrospit", 1, 14, 0.7),
                              Actions.Attack("Electroblow", 1, 22, 0.6),
                              Actions.Defence("Electroshield", 1, 0.1),
-                             Actions.Defence("Electrobulb", 1, 0.3),  # TODO Тут тоже какая-то способность
+                             Actions.Defence("Electrobulb", 1, 0.3),
                              Actions.Waiting()])
 
-    def level_up(self):
-        if 2 <= self.level:
+    def level_up(self, level):
+        if 2 == level:
             self.max_health = 70
             self.attack = 0.40
             self.defence = 0.15
@@ -171,11 +204,12 @@ class Electrode(Pokemon):
 
 
 class Pokeball(object):
-    def pull_out_pokemon(self):
-        poke = selection[random.randrange(0, len(selection))]
-        return self.pick_pokemon(poke)
+    @classmethod
+    def pull_out_pokemon(cls):
+        return selection[random.randrange(0, len(selection))]()
 
-    def pick_pokemon(self, poketype):
+    @staticmethod
+    def pick_pokemon(poketype):
         return poketype()
 
 

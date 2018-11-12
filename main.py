@@ -1,10 +1,14 @@
 import Engine
 
-engine = Engine.PokemonEngine(16)  # TODO Fix "out of range" on odd numbers
-engine.run()
+try:
+    engine = Engine.PokemonEngine(64)
+    engine.run()
+except Exception as ex:
+    print(ex)
 
 
 # TODO Добавить эффекты/способности
-# TODO Добавить левелап
+# TODO Заряд способностей
 # TODO Добавить файловый вывод
+# TODO Разобрать приватность полей/методов
 
