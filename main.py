@@ -1,8 +1,9 @@
 import Engine
 
 try:
-    engine = Engine.PokemonEngine(256)
-    engine.run_tournament()
+    engine = Engine.PokemonEngine()
+    #engine.run_tournament(64)  # Запуск чемпионата, где покемоны бьются насмерть до последнего выжившего
+    engine.run_training(6, 20)  # Запуск тренировки, где покемоны бьются между собой
 except Exception as ex:
     print(ex)
 

@@ -31,6 +31,8 @@ class Pokemon(object):
     type = PokemonType.NORMAL
     speed = bonus_speed = 0
     atb_position = 0
+    __wins__ = 0
+    __losses__ = 0
 
     actions = []
     effects = []
@@ -65,6 +67,17 @@ class Pokemon(object):
     def level_up(self, level):
         pass
 
+    def win(self, poke=None):
+        self.gain_exp(poke)
+        self.__wins__ += 1
+        if poke:
+            poke.loss()
+
+    def loss(self, poke=None):
+        self.__losses__ += 1
+        if poke:
+            poke.win()
+
     def get_hp(self):
         return self.__health__
 
@@ -78,14 +91,15 @@ class Pokemon(object):
         self.__health__ += step
 
     def introduce_yourself(self):
-        print("Имя: " + self.__pokename__)
-        print("Уровень: " + str(self.__level__))
-        print("Тип: " + str(self.type))
-        print("Атака: " + str(self.attack))
-        print("Защита: " + str(self.defence))
-        print("Здоровье: " + str(self.max_health))
-        print("Скорость: " + str(self.speed))
-        print("Действия: " + str(self.actions))
+        print("Имя: %s" % self.__pokename__)
+        print("Уровень: %s" % self.__level__)
+        print("Тип: %s" % self.type)
+        print("Атака: %s" % self.attack)
+        print("Защита: %s" % self.defence)
+        print("Здоровье: %s" % self.max_health)
+        print("Скорость: %s" % self.speed)
+        print("Действия: %s" % self.actions)
+        print("Побед: %s \nПоражений: %s\n" % (self.__wins__, self.__losses__))
 
     def add_effect(self, effect):
         if type(effect) is Effects.Stun:
@@ -153,7 +167,7 @@ class Pokemon(object):
 
                 if poke.get_hp() <= 0:
                     print("%s убивает %s!" % (self.get_name(), poke.get_name()))
-                    self.gain_exp(poke)
+                    self.win(poke)
                     return "KILL"
             else:
                 print("%s попытался использовать способность %s и промахнулся!" % (self.get_name(), action.name))
