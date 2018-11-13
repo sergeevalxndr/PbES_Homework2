@@ -1,6 +1,7 @@
 import Actions
 import random
 import Effects
+import copy
 from math import floor
 
 
@@ -45,7 +46,7 @@ class Pokemon(object):
     def atb_step(self):
         for a in self.effects:
             a.duration -= self.speed
-            if a.duration < 0:
+            if a.duration <= 0:
                 if type(a) is Effects.CombatEffect:
                     self.bonus_attack = round(self.bonus_attack - a.attack, 2)
                     self.bonus_defence = round(self.bonus_defence - a.defence, 2)
@@ -98,7 +99,7 @@ class Pokemon(object):
                 index = self.effects.index(f[0])
                 self.effects[index].duration += effect.duration
             else:
-                self.effects.append(effect)
+                self.effects.append(copy.copy(effect))
                 if type(effect) == Effects.CombatEffect:
                     self.bonus_attack = round(self.bonus_attack + effect.attack, 2)
                     self.bonus_defence = round(self.bonus_defence + effect.defence, 2)
@@ -110,11 +111,11 @@ class Pokemon(object):
                 new_health = self.__health__ + a.amount
                 if new_health > self.max_health:
                     print("%s исцеляет себе %s здоровья (%s->%s)"
-                          % (self.get_name(), str(a.amount), self.__health__, self.max_health))
+                          % (self.get_name(), a.amount, self.__health__, self.max_health))
                     self.__health__ = self.max_health
                 else:
                     print("%s исцеляет себе %s здоровья (%s->%s)"
-                          % (self.get_name(), str(a.amount), self.__health__, new_health))
+                          % (self.get_name(), a.amount, self.__health__, new_health))
                     self.__health__ = new_health
 
             if type(a) == Effects.Poisoning:
@@ -169,28 +170,37 @@ class Pokemon(object):
 class Eevee(Pokemon):
     def __init__(self):
         self.__pokename__ = "Eevee_" + str(random.randint(1, 100000))
-        self.max_health = self.__health__ = 55
-        self.attack = 0.10
+        self.max_health = self.__health__ = 50
+        self.attack = 0.15
+        self.defence = 0.0
         self.speed = 30
         self.actions = list([Actions.Attack("Tail Slash", 1, 10, 0.8),
                              Actions.Attack("Mighty Bite", 1, 18, 0.6),
                              Actions.Defence("Tail Propeller", 1, 0.1, effects=[
-                                 Effects.CombatEffect("Damage Boost", 250, attack=0.3)
+                                 Effects.CombatEffect("Damage Boost", 120, attack=0.3)
                              ]),
                              Actions.Defence("Tail Dome", 1, 0.2, effects=[
-                                 Effects.Healing("Healing", 150, 10)
+                                 Effects.Healing("Healing", 150, 3)
                              ]),
                              Actions.Waiting()])
         self.effects = list()
 
     def level_up(self, level):
         if 2 == level:
-            self.max_health = 75
-            self.attack = 0.20
+            self.max_health = 65
+            self.attack = 0.30
             self.speed = 35
-            self.defence = 0.10
+            self.defence = 0.05
             self.actions.append(Actions.Attack("Ear Flop", 1, 10, 0.8, effects=[
                 Effects.Stun("Ear Flop", 70)
+            ]))
+        if 3 == level:
+            self.max_health = 80
+            self.attack = 0.45
+            self.speed = 40
+            self.defence = 0.10
+            self.actions.append(Actions.Attack("Tail Spin", 1, 18, 0.8, effects=[
+                Effects.Poisoning("Tail Spin", 120, 4)
             ]))
 
 
@@ -198,12 +208,12 @@ class Krabby(Pokemon):
     def __init__(self):
         self.__pokename__ = "Krabby_" + str(random.randint(1, 100000))
         self.max_health = self.__health__ = 75
-        self.attack = 0.20
+        self.attack = 0.15
         self.defence = 0.10
-        self.speed = 20
+        self.speed = 17
         self.type = PokemonType.WATER
         self.actions = list([Actions.Attack("Claw Bite", 1, 12, 0.8),
-                             Actions.Attack("Claw Smash", 1, 17, 0.5, effects=[
+                             Actions.Attack("Claw Smash", 1, 17, 0.6, effects=[
                                  Effects.Stun("Claw Smash", 100)
                              ]),
                              Actions.Defence("Crab Defence", 1, 0.2),
@@ -214,21 +224,27 @@ class Krabby(Pokemon):
     def level_up(self, level):
         if 2 == level:
             self.max_health = 100
+            self.attack = 0.20
+            self.defence = 0.15
+            self.speed = 21
+            self.actions.append(Actions.Attack("Claw Slash", 1, 14, 0.7, effects=[
+                Effects.Poisoning("Отравление", 150, 6)
+            ]))
+        if 3 == level:
+            self.max_health = 130
             self.attack = 0.30
             self.defence = 0.20
             self.speed = 25
-            self.actions.append(Actions.Attack("Claw Slash", 1, 14, 0.8, effects=[
-                Effects.Poisoning("Отравление", 150, 6)
-            ]))
+            self.actions.append(Actions.Attack("Mighty Smash", 1, 28, 0.8))
 
 
 class Electrode(Pokemon):
     def __init__(self):
         self.__pokename__ = "Electrode_" + str(random.randint(1, 100000))
         self.max_health = self.__health__ = 40
-        self.attack = 0.30
+        self.attack = 0.20
         self.defence = 0.10
-        self.speed = 25
+        self.speed = 23
         self.type = PokemonType.ELECTRIC
         self.actions = list([Actions.Attack("Electrospit", 1, 14, 0.7),
                              Actions.Attack("Electroblow", 1, 22, 0.6),
@@ -239,12 +255,20 @@ class Electrode(Pokemon):
 
     def level_up(self, level):
         if 2 == level:
+            self.max_health = 55
+            self.attack = 0.30
+            self.defence = 0.15
+            self.speed = 27
+            self.actions.append(Actions.Attack("Electrostun", 1, 14, 0.8, effects=[
+                Effects.CombatEffect("Electrostun", 200, speed=-10)
+            ]))
+        if 3 == level:
             self.max_health = 70
             self.attack = 0.40
-            self.defence = 0.15
+            self.defence = 0.20
             self.speed = 30
-            self.actions.append(Actions.Attack("Electroshock", 1, 14, 0.8, effects=[
-                Effects.CombatEffect("Electrostun", 200, speed=-10)
+            self.actions.append(Actions.Attack("Electrodrain", 1, 12, 0.8, effects=[
+                Effects.Poisoning("Electrodrain", 200, -7)
             ]))
 
 
