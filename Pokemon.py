@@ -24,7 +24,7 @@ dmg_matrix = [[1, 1, 1, 1, 1, 1],
 
 class Pokemon(object):
     __pokename__ = "Default Name"
-    _level = 1
+    level = 1
     _health = _max_health = 50
     attack = bonus_attack = 0.0
     defence = bonus_defence = 0.0
@@ -38,12 +38,12 @@ class Pokemon(object):
     effects = []
 
     def _gain_exp(self, poke):
-        step = int(poke.get_level()) / int(self._level) / 5
-        new_level = round(self._level + step, 2)
-        if int(self._level) < int(new_level):
+        step = int(poke.get_level()) / int(self.level) / 5
+        new_level = round(self.level + step, 2)
+        if int(self.level) < int(new_level):
             self._level_up(int(new_level))
             print("%s получает новый уровень!" % self.get_name())
-        self._level = new_level
+        self.level = new_level
 
     def atb_init(self):
         self.atb_position += random.randint(0, 10)
@@ -75,6 +75,7 @@ class Pokemon(object):
         self._wins += 1
         if poke:
             poke.loss()
+        return self.get_level()
 
     def loss(self, poke=None):
         self._losses += 1
@@ -87,18 +88,24 @@ class Pokemon(object):
     def get_hp(self):
         return self._health
 
+    def get_exp(self):
+        return self.level
+
     def get_name(self):
         return self.__pokename__
 
     def get_level(self):
-        return self._level
+        return self.level
 
     def _change_hp(self, step):
         self._health += step
 
+    def set_hp(self, hp):
+        self._health = hp
+
     def introduce_yourself(self):
         print("Имя: %s" % self.__pokename__)
-        print("Уровень: %s" % self._level)
+        print("Уровень: %s" % self.level)
         print("Тип: %s" % self.poketype)
         print("Атака: %s" % self.attack)
         print("Защита: %s" % self.defence)
