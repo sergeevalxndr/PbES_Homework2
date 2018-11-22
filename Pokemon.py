@@ -2,7 +2,7 @@ import Actions
 import random
 import Effects
 import copy
-from math import floor
+from abc import ABCMeta, abstractmethod
 
 
 class PokemonType(object):
@@ -22,8 +22,8 @@ dmg_matrix = [[1, 1, 1, 1, 1, 1],
               [1, 1.2, 1, 0.8, 1, 1]]
 
 
-class Pokemon(object):
-    __pokename__ = "Default Name"
+class Pokemon(metaclass=ABCMeta):
+    _pokename = "Default Name"
     level = 1
     _health = _max_health = 50
     attack = bonus_attack = 0.0
@@ -36,6 +36,10 @@ class Pokemon(object):
 
     actions = []
     effects = []
+
+    def __repr__(self):
+        return (f'{self.__class__.__name__}('
+                f'{self._pokename!r})')
 
     def _gain_exp(self, poke):
         step = int(poke.get_level()) / int(self.level) / 5
@@ -67,6 +71,7 @@ class Pokemon(object):
         self.bonus_defence = 0
         self._bonus_speed = 0
 
+    @abstractmethod
     def _level_up(self, level):
         pass
 
@@ -92,7 +97,7 @@ class Pokemon(object):
         return self.level
 
     def get_name(self):
-        return self.__pokename__
+        return self._pokename
 
     def get_level(self):
         return self.level
@@ -104,7 +109,7 @@ class Pokemon(object):
         self._health = hp
 
     def introduce_yourself(self):
-        print("Имя: %s" % self.__pokename__)
+        print("Имя: %s" % self._pokename)
         print("Уровень: %s" % self.level)
         print("Тип: %s" % self.poketype)
         print("Атака: %s" % self.attack)
@@ -126,7 +131,7 @@ class Pokemon(object):
                 index = self.effects.index(f[0])
                 self.effects[index].duration += effect.duration
             else:
-                self.effects.append(copy.copy(effect))
+                self.effects.append(copy.deepcopy(effect))
                 if type(effect) == Effects.CombatEffect:
                     self.bonus_attack = round(self.bonus_attack + effect.attack, 2)
                     self.bonus_defence = round(self.bonus_defence + effect.defence, 2)
@@ -163,11 +168,11 @@ class Pokemon(object):
             # TODO Изменить приоритеты, добавить заряд
             priority -= 1
             eligible_actions = list(filter(lambda a: a.priority == priority, self.actions))
-            if eligible_actions != []:
+            if eligible_actions:
                 action = eligible_actions[random.randrange(0, len(eligible_actions))]
 
         if type(action) is Actions.Attack:
-            if random.randint(0, 100)/100 < action.accuracy:
+            if random.randint(0, 100) / 100 < action.accuracy:
                 damage = int(action.power
                              * (dmg_matrix[self.poketype][poke.poketype] + self.attack + self.bonus_attack)
                              * (1 - poke.defence - poke.bonus_defence))
@@ -195,7 +200,7 @@ class Pokemon(object):
 
 class Eevee(Pokemon):
     def __init__(self):
-        self.__pokename__ = "Eevee_" + str(random.randint(1, 100000))
+        self._pokename = "Eevee_" + str(random.randint(1, 100000))
         self._max_health = 50
         self.attack = 0.15
         self.defence = 0.0
@@ -232,7 +237,7 @@ class Eevee(Pokemon):
 
 class Krabby(Pokemon):
     def __init__(self):
-        self.__pokename__ = "Krabby_" + str(random.randint(1, 100000))
+        self._pokename = "Krabby_" + str(random.randint(1, 100000))
         self._max_health = 75
         self.attack = 0.15
         self._defence = 0.10
@@ -266,7 +271,7 @@ class Krabby(Pokemon):
 
 class Electrode(Pokemon):
     def __init__(self):
-        self.__pokename__ = "Electrode_" + str(random.randint(1, 100000))
+        self._pokename = "Electrode_" + str(random.randint(1, 100000))
         self._max_health = 50
         self.attack = 0.20
         self.defence = 0.10

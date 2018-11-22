@@ -3,6 +3,10 @@ class Effect(object):
     type = None
     name = "Default name"
 
+    def __repr__(self):
+        return (f'{self.__class__.__name__}('
+                f'{self.name!r})')
+
 
 class CombatEffect(Effect):
     def __init__(self, name, duration, attack=0, defence=0, speed=0):

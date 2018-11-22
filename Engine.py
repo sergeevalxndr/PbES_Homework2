@@ -1,6 +1,7 @@
 import Pokemon
 import random
 import math
+import pickle
 
 
 class PokemonEngine(object):
@@ -35,6 +36,8 @@ class PokemonEngine(object):
         print("\nЧемпионом кровавой битвы покемонов становится %s!" % self.pokes[0].get_name())
         self.pokes[0].introduce_yourself()
 
+        self.serialise("poke_tournament_winner.txt")
+
     def run_training(self, quantity, rounds):
         """ Запуск тренировки среди n%2 == 0 покемонов в течение m раундов. В каждом
         раунде покемоны случайным образом разбиваются на пары и сражаются несколько раундов.
@@ -64,6 +67,8 @@ class PokemonEngine(object):
         for a in self.pokes:
             print(a.introduce_yourself())
 
+        self.serialise("poke_training.txt")
+        print(self.deserialise("poke_training.txt"))
 
     @staticmethod
     def battle(eev1, eev2):
@@ -103,3 +108,13 @@ class PokemonEngine(object):
         print("Участники:")
         for a in self.pokes:
             print(a.get_name())
+
+    def serialise(self, name):
+        with open(name, "wb") as f:
+            pickle.dump(self.pokes, f)
+
+    @staticmethod
+    def deserialise(name):
+        with open(name, "rb") as f:
+            pokes = pickle.load(f)
+        return pokes

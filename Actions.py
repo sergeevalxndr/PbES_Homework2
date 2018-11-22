@@ -5,6 +5,10 @@ class Action(object):
     effects = []
     name = "Default name"
 
+    def __repr__(self):
+        return (f'{self.__class__.__name__}('
+                f'{self.name!r})')
+
 
 class Attack(Action):
     def __init__(self, name, priority, power, accuracy, effects=[], charge=0):
